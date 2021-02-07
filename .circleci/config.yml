@@ -36,8 +36,8 @@ jobs:
           name: Build application Docker image
           command: |
             docker build \
-              --cache-from=ia-tither-3 \
-              -t innovanon/ia-tither-3 \
+              --cache-from=ia-tither-7 \
+              -t innovanon/ia-tither-7 \
               --build-arg TEST=1 .
       - deploy:
           name: Push application Docker image
@@ -46,15 +46,15 @@ jobs:
               #docker tag lfs-builder "InnovAnon-Inc/lfs-builder:${CIRCLE_SHA1}"
               #docker push           "InnovAnon-Inc/lfs-builder:${CIRCLE_SHA1}"
               docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
-              docker push innovanon/ia-tither-3
+              docker push innovanon/ia-tither-7
             fi
       - run:
-          name: Push upstream (ia-tither-4)
+          name: Push upstream (ia-tither-8)
           command: |
             if [ "${CIRCLE_BRANCH}" == "master" ]; then
               sleep 333
               curl --location --request POST \
-                'https://circleci.com/api/v2/project/github/InnovAnon-Inc/ia-tither-4/pipeline' \
+                'https://circleci.com/api/v2/project/github/InnovAnon-Inc/ia-tither-8/pipeline' \
                 --header 'Content-Type: application/json' \
                 -u "${API_TOKEN}:"
             fi
