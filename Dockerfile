@@ -22,6 +22,8 @@ RUN ( cd                        /tmp/stage-0      \
   | tar pxf - -C /                                 \
  && rm -rf                      /tmp/stage-0      \
  && chmod -v 1777               /tmp              \
+ && apt-key add < /tmp/key.asc                    \
+ && rm    -v      /tmp/key.asc                    \
  && apt update                                    \
  && apt install tor deb.torproject.org-keyring    \
  \
