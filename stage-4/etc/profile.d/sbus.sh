@@ -1,0 +1,3 @@
+MAKEFLAGS="$(nproc)"
+export MAKEFLAGS
+

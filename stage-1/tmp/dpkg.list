@@ -1,0 +1,5 @@
+#! /usr/bin/env -S tail -n +2
+deb.torproject.org-keyring
+tor
+apt-transport-tor
+

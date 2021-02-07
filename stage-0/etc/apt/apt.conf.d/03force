@@ -1,0 +1,2 @@
+DPkg::options { "--force-confdef"; };
+
