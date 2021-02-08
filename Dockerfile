@@ -22,10 +22,11 @@ RUN ( cd                        /tmp/stage-0      \
   | tar pxf - -C /                                 \
  && rm -rf                      /tmp/stage-0      \
  && chmod -v 1777               /tmp              \
- && apt update && apt install apt-transport-https \
  && apt-key add < /tmp/key.asc                    \
  && rm    -v      /tmp/key.asc                    \
+ && apt update && apt install apt-transport-https \
  && apt update                                    \
+ && apt-cache search tor \
  && apt install tor deb.torproject.org-keyring    \
  \
  && ( cd                        /tmp/stage-1      \
