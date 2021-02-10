@@ -17,6 +17,7 @@ COPY       ./stage-1/           /tmp/stage-1
 COPY       ./stage-2            /tmp/stage-2
 COPY       ./stage-3            /tmp/stage-3
 COPY       ./stage-4            /tmp/stage-4
+ #&& apt install tor deb.torproject.org-keyring    \
 RUN ( cd                        /tmp/stage-0      \
  &&   tar pcf - .                                ) \
   | tar pxf - -C /                                 \
@@ -26,8 +27,7 @@ RUN ( cd                        /tmp/stage-0      \
  && rm    -v      /tmp/key.asc                    \
  && apt update && apt install apt-transport-https \
  && apt update                                    \
- && apt-cache search tor \
- && apt install tor deb.torproject.org-keyring    \
+ && apt install tor \
  \
  && ( cd                        /tmp/stage-1      \
  &&   tar pcf - .                                ) \
@@ -46,15 +46,25 @@ RUN ( cd                        /tmp/stage-0      \
  && tor --verify-config
 
 SHELL ["/bin/bash", "-l", "-c"]
+      #intel-oneapi-compiler-dpcpp-cpp-and-cpp-classic \
+      #intel-oneapi-dev-utilities \
 RUN sleep 127           \
+ && apt update          \
  && apt install -y      \
+      autoconf          \
+      automake          \
       binutils-dev      \
+      build-essential   \
       clang             \
+      git               \
+      intel-oneapi-dpcpp-cpp-compiler \
       libgmp-dev        \
       libisl-dev        \
       libmpc-dev        \
       libmpfr-dev       \
+      libtool           \
       llvm              \
+      m4                \
       pbzip2            \
       pigz              \
       pixz              \
@@ -72,60 +82,63 @@ RUN sleep 127           \
  && update-alternatives --force --install          \
       $(command -v xz     || echo /usr/bin/xz)     \
       xz     $(command -v pixz)   200              \
- && apt full-upgrade                               \
- && clean.sh
+ && apt full-upgrade
+# && clean.sh
 
-#COPY          ./stage-3.$EXT    /tmp/
-RUN ( cd                        /tmp/stage-3       \
- &&   tar pcf - .                                 ) \
-  | tar pxf - -C /                                  \
- && rm -rf                      /tmp/stage-3       \
- && chmod -v 1777               /tmp               \
- && apt update                                     \
- && [ -x            /tmp/dpkg.list ]               \
- && apt install   $(/tmp/dpkg.list)                \
- && cd /usr/local/bin                              \
- && shc -rUf     support-wrapper                   \
- && rm    -v     support-wrapper.x.c            \
- && chmod -v 0555 support-wrapper.x                \
- && apt-mark auto $(/tmp/dpkg.list)                \
- && rm -v           /tmp/dpkg.list                 \
- && clean.sh
- #&& rm    -v     support-wrapper{,.x.c}            \
 
-#FROM base as base-1
-# TODO
-#COPY --from=support /usr/local/bin/support-wrapper.x \
-#                    /usr/local/bin/support-wrapper
-#COPY --from=support /usr/local/bin/support-wrapper \
-#                    /usr/local/bin/support-wrapper
-#SHELL ["/bin/bash", "-c"]
-
-#FROM base-1 as lfs-bare
-#ARG EXT=tgz
+##COPY          ./stage-3.$EXT    /tmp/
+#RUN ( cd                        /tmp/stage-3       \
+# &&   tar pcf - .                                 ) \
+#  | tar pxf - -C /                                  \
+# && rm -rf                      /tmp/stage-3       \
+# && chmod -v 1777               /tmp               \
+# && apt update                                     \
+# && [ -x            /tmp/dpkg.list ]               \
+# && apt install   $(/tmp/dpkg.list)                \
+# && cd /usr/local/bin                              \
+# && shc -rUf     support-wrapper                   \
+# && rm    -v     support-wrapper.x.c            \
+# && chmod -v 0555 support-wrapper.x                \
+# && apt-mark auto $(/tmp/dpkg.list)                \
+# && rm -v           /tmp/dpkg.list
+## && clean.sh
+# #&& rm    -v     support-wrapper{,.x.c}            \
+#
+##FROM base as base-1
+## TODO
+##COPY --from=support /usr/local/bin/support-wrapper.x \
+##                    /usr/local/bin/support-wrapper
+##COPY --from=support /usr/local/bin/support-wrapper \
+##                    /usr/local/bin/support-wrapper
+##SHELL ["/bin/bash", "-c"]
+#
+##FROM base-1 as lfs-bare
+##ARG EXT=tgz
 ARG LFS=/mnt/lfs
 ARG TEST=
 #SHELL ["/bin/bash", "-l", "-c"]
 #COPY          ./stage-4.$EXT    /tmp/
-RUN ( cd                        /tmp/stage-4       \
- &&   tar pcf - .                                 ) \
-  | tar pxf - -C /                                  \
- && rm -rf                      /tmp/stage-4       \
- && chmod -v 1777               /tmp                \
- && apt update                                      \
- && [ -x           /tmp/dpkg.list ]                 \
- && apt install  $(/tmp/dpkg.list)                  \
- && rm    -v       /tmp/dpkg.list                  \
- && clean.sh                                       \
- && mkdir -vp         $LFS/sources                  \
+#RUN ( cd                        /tmp/stage-4       \
+# &&   tar pcf - .                                 ) \
+#  | tar pxf - -C /                                  \
+# && rm -rf                      /tmp/stage-4       \
+# && chmod -v 1777               /tmp                \
+# && apt update                                      \
+# && [ -x           /tmp/dpkg.list ]                 \
+# && apt install  $(tail -n +2 /tmp/dpkg.list)                  \
+# && rm    -v       /tmp/dpkg.list                  \
+#RUN clean.sh                                       \
+RUN mkdir -vp         $LFS/sources                  \
  && chmod -v a+wt     $LFS/sources                  \
  && groupadd lfs                                    \
  && useradd -s /bin/bash -g lfs -G debian-tor -m -k /dev/null lfs \
  && chown -v  lfs:lfs $LFS/sources                  \
- && chown -vR lfs:lfs /home/lfs                     \
- && exec true || exec false
+ && chown -vR lfs:lfs /home/lfs
+ #&& clean.sh \
+ #&& exec true || exec false
  #&& chown  -R lfs:lfs /var/lib/tor
 
+#RUN exit 2
 #FROM lfs-bare as test
 #USER lfs
 #RUN sleep 31 \
@@ -171,40 +184,49 @@ ENV PREFIX=/opt/cpuminer
 ARG ARCH=native
 ENV ARCH="$ARCH"
 
-#ENV CPPFLAGS="-DUSE_ASM $CPPFLAGS"
-ENV   CFLAGS="-march=$ARCH -mtune=$ARCH $CFLAGS"
+ENV CCP=/opt/intel/oneapi/compiler/latest/linux/bin
+ENV CC=$CCP/icx
+ENV CXX=$CCP/icpx
+ENV FC=$CCP/ifort
+#ENV PATH=/opt/intel/oneapi/compiler/latest/linux/bin:$PATH
 
-# PGO
-#ENV   CFLAGS="-fipa-profile -fprofile-reorder-functions -fvpt -pg -fprofile-abs-path -fprofile-dir=/var/cpuminer  $CFLAGS"
-#ENV  LDFLAGS="-fipa-profile -fprofile-reorder-functions -fvpt -pg -fprofile-abs-path -fprofile-dir=/var/cpuminer $LDFLAGS"
-#ENV   CFLAGS="-pg -fprofile-abs-path -fprofile-generate=/var/cpuminer  $CFLAGS"
-#ENV  LDFLAGS="-pg -fprofile-abs-path -fprofile-generate=/var/cpuminer $LDFLAGS"
-
-# Debug
-#ENV CPPFLAGS="-DNDEBUG $CPPFLAGS"
-ENV   CFLAGS="-Ofast -g0 $CFLAGS"
-
-# Static
-#ENV  LDFLAGS="$LDFLAGS -static -static-libgcc -static-libstdc++"
-
-# LTO
-ENV   CFLAGS="-fuse-linker-plugin -flto $CFLAGS"
-ENV  LDFLAGS="-fuse-linker-plugin -flto $LDFLAGS"
-##ENV   CFLAGS="-fuse-linker-plugin -flto -ffat-lto-objects $CFLAGS"
-##ENV  LDFLAGS="-fuse-linker-plugin -flto -ffat-lto-objects $LDFLAGS"
-
-# Dead Code Strip
-ENV   CFLAGS="-ffunction-sections -fdata-sections $CFLAGS"
-ENV  LDFLAGS="-Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections $LDFLAGS"
-##ENV  LDFLAGS="-Wl,-Bsymbolic -Wl,--gc-sections $LDFLAGS"
-
-# Optimize
-#ENV   CLANGFLAGS="-ffast-math -fassociative-math -freciprocal-math -fmerge-all-constants $CFLAGS"
-#ENV       CFLAGS="-fipa-pta -floop-nest-optimize -fgraphite-identity -floop-parallelize-all $CLANGFLAGS"
-ENV CFLAGS="-fmerge-all-constants $CFLAGS"
+##ENV CPPFLAGS="-DUSE_ASM $CPPFLAGS"
+#ENV   CFLAGS="-march=$ARCH -mtune=$ARCH $CFLAGS"
+#
+## PGO
+##ENV   CFLAGS="-fipa-profile -fprofile-reorder-functions -fvpt -pg -fprofile-abs-path -fprofile-dir=/var/cpuminer  $CFLAGS"
+##ENV  LDFLAGS="-fipa-profile -fprofile-reorder-functions -fvpt -pg -fprofile-abs-path -fprofile-dir=/var/cpuminer $LDFLAGS"
+##ENV   CFLAGS="-pg -fprofile-abs-path -fprofile-generate=/var/cpuminer  $CFLAGS"
+##ENV  LDFLAGS="-pg -fprofile-abs-path -fprofile-generate=/var/cpuminer $LDFLAGS"
+#
+## Debug
+##ENV CPPFLAGS="-DNDEBUG $CPPFLAGS"
+#ENV   CFLAGS="-Ofast -g0 $CFLAGS"
+#
+## Static
+##ENV  LDFLAGS="$LDFLAGS -static -static-libgcc -static-libstdc++"
+#
+## LTO
+#ENV   CFLAGS="-fuse-linker-plugin -flto $CFLAGS"
+#ENV  LDFLAGS="-fuse-linker-plugin -flto $LDFLAGS"
+###ENV   CFLAGS="-fuse-linker-plugin -flto -ffat-lto-objects $CFLAGS"
+###ENV  LDFLAGS="-fuse-linker-plugin -flto -ffat-lto-objects $LDFLAGS"
+#
+## Dead Code Strip
+#ENV   CFLAGS="-ffunction-sections -fdata-sections $CFLAGS"
+#ENV  LDFLAGS="-Wl,-s -Wl,-Bsymbolic -Wl,--gc-sections $LDFLAGS"
+###ENV  LDFLAGS="-Wl,-Bsymbolic -Wl,--gc-sections $LDFLAGS"
+#
+## Optimize
+##ENV   CLANGFLAGS="-ffast-math -fassociative-math -freciprocal-math -fmerge-all-constants $CFLAGS"
+##ENV       CFLAGS="-fipa-pta -floop-nest-optimize -fgraphite-identity -floop-parallelize-all $CLANGFLAGS"
+#ENV CFLAGS="-fmerge-all-constants $CFLAGS"
+#ENV CFLAGS="$CFLAGS -fPIE -pie"
+#ENV CXXFLAGS="$CXXFLAGS -fPIE -pie"
+#ENV LDFLAGS="$LDFLAGS -fPIE -pie"
 
 #ENV CLANGXXFLAGS="$CLANGFLAGS $CXXFLAGS"
-ENV CXXFLAGS="$CFLAGS $CXXFLAGS"
+#ENV CXXFLAGS="$CFLAGS $CXXFLAGS"
 
 WORKDIR /tmp
 
@@ -219,6 +241,10 @@ WORKDIR /tmp
 
 #COPY    ./hwloc.sh       ./
 #RUN     ./hwloc.sh     1
+
+#RUN command -v $CC
+#RUN command -v $CXX
+#RUN command -v $FC
 
 COPY    ./llvm.grm               \
         ./fingerprint.sh         \

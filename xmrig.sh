@@ -5,6 +5,14 @@ set -euvxo pipefail
 
 export CPPFLAGS="-DNDEBUG $CPPFLAGS"
 
+#function setvars () {
+##  . /opt/intel/oneapi/setvars.sh
+#set +euvxo pipefail
+#. /opt/intel/oneapi/ipp/latest/env/vars.sh
+#  return $?
+#}
+#setvars
+
 if (( $1 == 1 )) ; then
   FLAG=0
   for k in $(seq 5) ; do
@@ -18,8 +26,8 @@ if (( $1 == 1 )) ; then
 fi
 cd xmrig
 
-/tmp/donate.h.sed           -i src/donate.h
-/tmp/DonateStrategy.cpp.sed -i src/net/strategies/DonateStrategy.cpp
+sed -f /tmp/donate.h.sed           -i src/donate.h
+sed -f /tmp/DonateStrategy.cpp.sed -i src/net/strategies/DonateStrategy.cpp
 cp -v /tmp/Config_default.h    src/core/config/Config_default.h
 
 mkdir build
@@ -34,8 +42,10 @@ cd ../build
 cmake .. \
   -DXMRIG_DEPS=scripts/deps        \
   -DBUILD_SHARED_LIBS=OFF \
-  -DBUILD_STATIC=ON \
+  -DBUILD_STATIC=OFF \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_C_COMPILER="$CC" \
+  -DCMAKE_CXX_COMPILER="$CXX" \
   -DCMAKE_C_FLAGS="$CFLAGS" \
   -DCMAKE_CXX_FLAGS="$CXXFLAGS" \
   -DCMAKE_INSTALL_PREFIX="$PREFIX" \
